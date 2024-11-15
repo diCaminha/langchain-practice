@@ -1,18 +1,21 @@
 import json
 import os
-from dataclasses import Field
 
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import BaseTool
-from openai import api_key
 from pydantic import BaseModel
-from pydantic.v1.json import pydantic_encoder
+import pandas as pd
 
 
 def busca_universidade_por_nome(nome: str):
-    pass
+    dados = pd.read_csv("docs/universidades.csv")
+    dados_universidade = dados[dados["NOME_FACULDADE"] == nome]
+    if dados_universidade.empty:
+        return {}
+    return dados_universidade[:1].to_dict()
 
 def busca_universidades():
     pass
@@ -21,10 +24,11 @@ def busca_universidades():
 class UniversityName(BaseModel):
     name: str = Field("university name in lowercase")
 
+
 class UniversityDataTool(BaseTool):
     name = "UniversityData"
     description = """
-        This tool extract data about an university by given its name. 
+        This tool extract data and informations about an university by given its name. 
         Pass to this tool as input the name of the university.
     """
 
@@ -54,7 +58,7 @@ class UniversityDataTool(BaseTool):
         )
 
         chain = template | llm | parser
-        university_name = chain.invoke({"university_name": input})
+        university_name = chain.invoke({"input": input})
 
         university = busca_universidade_por_nome(university_name)
 
