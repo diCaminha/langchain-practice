@@ -6,7 +6,7 @@ load_dotenv()
 
 
 agent_openai = AgentOpenAIFunctions()
-executor = AgentExecutor(agent=agent_openai.agent, tools=agent_openai.tools)
+executor = AgentExecutor(agent=agent_openai.agent, tools=agent_openai.tools, verbose=True)
 
-resp = executor.invoke({"input": "what are the data about Ana?"})
+resp = executor.invoke({"input": "Is Marcos going well in math classes?"})
 print(resp)

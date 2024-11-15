@@ -1,5 +1,6 @@
 import json
 import os
+from tempfile import template
 
 from langchain.tools import BaseTool
 from langchain_community.chat_models import ChatOpenAI
@@ -45,5 +46,44 @@ class StudentData(BaseTool):
 
         student_name = cadeia.invoke({"input": input})
         dados = busca_dados_de_estudante(student_name["name"])
-        print(dados)
         return json.dumps(dados)
+
+
+class AcademicProfile(BaseModel):
+    name: str = Field("name of the student")
+    conclusion_year = Field("the year where the student will finish the graduation")
+    summary: str = Field("summary of the main characteristics of this student.")
+
+class StudentAcademicProfile(BaseTool):
+    name = "StudentAcademicProfile"
+    description = """"
+        Creates an academic profile of a student.
+        This tool requires as input all the data about the student.
+    """
+
+
+
+    def _run(self, input: str) -> str:
+        llm = ChatOpenAI(
+            model="gpt-4o",
+            api_key=os.getenv("OPEN_AI_KEY")
+        )
+
+        parser = JsonOutputParser(pydantic_object=AcademicProfile)
+
+        template = PromptTemplate(
+            template = """
+                - Format the student data to his academic profile.
+                - With the data, identify the universities suggested to him, and related with the interest of the student.
+                - Focus on exaclty what make sense of informations expected by the universities.
+                
+                Current Information:
+                {student_data}
+                {output_format}
+            """,
+            input_variables=["student_data"],
+            partial_variables={"output_format": parser.get_format_instructions()}
+        )
+
+        cadeia = template | llm | parser
+        return cadeia.invoke({"student_data": input})
